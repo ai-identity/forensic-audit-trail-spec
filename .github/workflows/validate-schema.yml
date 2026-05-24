@@ -51,7 +51,7 @@ jobs:
             [ -z "$schema" ] && continue
             echo "::group::Validating $schema"
             # ajv compile validates the schema itself against the 2020-12 meta-schema.
-            npx ajv compile --spec=draft2020 -s "$schema" --strict=true
+            npx ajv compile --spec=draft2020 -c ajv-formats -s "$schema" --strict=true
             echo "::endgroup::"
           done
 
@@ -82,7 +82,7 @@ jobs:
                   data_file = d_f.name
               print(f"Validating example '{name}' against {schema_path}")
               r = subprocess.run(
-                  ["npx", "ajv", "validate", "--spec=draft2020",
+                  ["npx", "ajv", "validate", "--spec=draft2020", "-c", "ajv-formats",
                    "-s", schema_file, "-d", data_file, "--strict=false"],
                   capture_output=True, text=True,
               )
