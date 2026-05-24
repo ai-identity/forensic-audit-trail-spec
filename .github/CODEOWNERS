@@ -1,0 +1,17 @@
+# CODEOWNERS — who reviews changes to which paths.
+# See https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+#
+# This file enforces review on every PR. Solo-founder pattern: even though
+# the same person opens and merges, code-owner review must be explicitly
+# requested and granted, which forces a deliberate read of the diff before
+# merging to main.
+
+# Default owner for everything in the repo.
+*       @Levaj2000
+
+# Spec normative content — extra scrutiny lives here.
+SPEC-v1.0.md           @Levaj2000
+schemas/               @Levaj2000
+
+# CI + repo policy — keep behavior changes auditable.
+.github/               @Levaj2000

@@ -1,0 +1,94 @@
+name: Validate JSON Schema
+
+on:
+  pull_request:
+    paths:
+      - "schemas/**/*.json"
+      - ".github/workflows/validate-schema.yml"
+  push:
+    branches: [main]
+    paths:
+      - "schemas/**/*.json"
+      - ".github/workflows/validate-schema.yml"
+
+jobs:
+  validate:
+    name: Validate schemas with ajv (draft 2020-12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli@5 ajv-formats@3
+
+      - name: Find schemas
+        id: find
+        run: |
+          schemas=$(find schemas -type f -name "*.json" | sort)
+          if [ -z "$schemas" ]; then
+            echo "No schemas found — nothing to validate."
+            echo "found=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Schemas found:"
+          echo "$schemas"
+          # Write multi-line output safely.
+          {
+            echo "found<<EOF"
+            echo "$schemas"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate each schema is a well-formed JSON Schema 2020-12
+        if: steps.find.outputs.found != ''
+        run: |
+          set -e
+          echo "${{ steps.find.outputs.found }}" | while IFS= read -r schema; do
+            [ -z "$schema" ] && continue
+            echo "::group::Validating $schema"
+            # ajv compile validates the schema itself against the 2020-12 meta-schema.
+            npx ajv compile --spec=draft2020 -s "$schema" --strict=true
+            echo "::endgroup::"
+          done
+
+      - name: Validate embedded $defs examples (if present)
+        if: steps.find.outputs.found != ''
+        run: |
+          set -e
+          echo "${{ steps.find.outputs.found }}" | while IFS= read -r schema; do
+            [ -z "$schema" ] && continue
+            # Extract $defs.example_* objects and validate them against the schema.
+            python3 - "$schema" <<'PY'
+          import json, sys, subprocess, tempfile, pathlib
+          schema_path = pathlib.Path(sys.argv[1])
+          schema = json.loads(schema_path.read_text())
+          defs = schema.get("$defs", {})
+          examples = {k: v for k, v in defs.items() if k.startswith("example_")}
+          if not examples:
+              print(f"No $defs.example_* in {schema_path}")
+              sys.exit(0)
+          # Schema without $defs (avoid recursive validation issues).
+          schema_no_defs = {k: v for k, v in schema.items() if k != "$defs"}
+          with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as s_f:
+              json.dump(schema_no_defs, s_f)
+              schema_file = s_f.name
+          for name, example in examples.items():
+              with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as d_f:
+                  json.dump(example, d_f)
+                  data_file = d_f.name
+              print(f"Validating example '{name}' against {schema_path}")
+              r = subprocess.run(
+                  ["npx", "ajv", "validate", "--spec=draft2020",
+                   "-s", schema_file, "-d", data_file, "--strict=false"],
+                  capture_output=True, text=True,
+              )
+              print(r.stdout)
+              if r.returncode != 0:
+                  print(r.stderr, file=sys.stderr)
+                  sys.exit(r.returncode)
+          PY
+          done
