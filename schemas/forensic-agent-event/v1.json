@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ai-identity/forensic-audit-trail-spec/schemas/forensic-agent-event/v1.json",
+  "title": "Forensic Agent Event",
+  "description": "A single chain entry in an AI Forensics Audit Trail. See SPEC-v1.0.md §4 for normative semantics.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "org_id",
+    "agent_id",
+    "endpoint",
+    "method",
+    "decision",
+    "request_metadata",
+    "entry_hash",
+    "prev_hash",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Global monotonic sequence number per operator. Used by the attestation's audit_log_ids array."
+    },
+    "org_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Tenant / organization isolation key."
+    },
+    "agent_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The acting agent identity. Stable across rotations of the agent's credentials."
+    },
+    "agent_name": {
+      "type": ["string", "null"],
+      "maxLength": 255,
+      "description": "Human-readable agent label at capture time. May diverge from the current agent record (renames, deletes)."
+    },
+    "user_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Initiating principal, if applicable. Null for service-to-service or fully autonomous flows."
+    },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "maxLength": 128,
+      "description": "Cross-system trace correlator. SHOULD match the OpenTelemetry trace ID when available."
+    },
+    "endpoint": {
+      "type": "string",
+      "maxLength": 2048,
+      "description": "Upstream URL the agent called. Operators MUST scrub credentials from query strings before persistence."
+    },
+    "method": {
+      "type": "string",
+      "maxLength": 10,
+      "description": "HTTP method or RPC verb."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "deny", "error"],
+      "description": "Gateway decision at policy-evaluation time. 'error' is reserved for gateway-side failures (not upstream 5xx, which are 'allow' with response metadata)."
+    },
+    "cost_estimate_usd": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Inferred or reported cost of the call. Decimal precision should be at least 1e-6 USD."
+    },
+    "latency_ms": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "End-to-end latency as observed by the gateway."
+    },
+    "request_metadata": {
+      "type": "object",
+      "description": "Provider-specific structured metadata. MUST NOT contain raw secrets or PII payloads.",
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "description": "Provider model identifier (e.g., 'claude-opus-4-6', 'gpt-5-turbo')."
+        },
+        "system_fingerprint": {
+          "type": "string",
+          "description": "Provider system fingerprint, if exposed. Anchors the response to a specific provider deployment."
+        },
+        "provider_response_id": {
+          "type": "string",
+          "description": "Provider-assigned response ID. Used as integrity anchor when logprobs are unavailable (see SPEC §9.1)."
+        },
+        "policy_version": {
+          "type": "string",
+          "description": "The version of the operator's policy ruleset that evaluated this request."
+        },
+        "atlas_tags": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^T\\d{4}(\\.\\d{3})?$" },
+          "description": "MITRE ATLAS technique IDs triggered or relevant to this event (e.g., ['T0051', 'T0040'])."
+        },
+        "otel_trace_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Hex-encoded W3C Trace Context trace ID. SHOULD match correlation_id when both are present."
+        },
+        "otel_span_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$",
+          "description": "Hex-encoded W3C Trace Context span ID for this event."
+        }
+      },
+      "additionalProperties": true
+    },
+    "entry_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "HMAC-SHA256 over RFC 8785 canonical JSON of all other fields plus prev_hash. See SPEC §4.1."
+    },
+    "prev_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "entry_hash of the previous chain entry. First entry uses 64 hex zeros as the seed."
+    },
+    "prev_hash_org": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Optional per-org chain linkage. See SPEC §4.2."
+    },
+    "entry_hash_org": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Optional per-org chain hash. See SPEC §4.2."
+    },
+    "org_chain_seq": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Per-org monotonic sequence number. Present iff per-org chain is in use."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Capture time as observed by the gateway, RFC 3339 with explicit UTC offset."
+    }
+  },
+  "$defs": {
+    "example_allow": {
+      "id": 4242,
+      "org_id": "8f3a1b2c-9d4e-5f6a-7b8c-9d0e1f2a3b4c",
+      "agent_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "agent_name": "support-triage-agent",
+      "user_id": null,
+      "correlation_id": "0af7651916cd43dd8448eb211c80319c",
+      "endpoint": "https://api.anthropic.com/v1/messages",
+      "method": "POST",
+      "decision": "allow",
+      "cost_estimate_usd": 0.018400,
+      "latency_ms": 1247,
+      "request_metadata": {
+        "model_id": "claude-opus-4-6",
+        "system_fingerprint": "fp_abc123",
+        "provider_response_id": "msg_01XyZ...",
+        "policy_version": "2026-05-01-r3",
+        "atlas_tags": [],
+        "otel_trace_id": "0af7651916cd43dd8448eb211c80319c",
+        "otel_span_id": "b7ad6b7169203331"
+      },
+      "entry_hash": "3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b",
+      "prev_hash": "2c1e0b08c7e34f3e9a0c6b8d5a4e3f2c1b0a9876543210fedcba9876543210ab",
+      "prev_hash_org": null,
+      "entry_hash_org": null,
+      "org_chain_seq": null,
+      "created_at": "2026-05-24T17:42:13.842Z"
+    }
+  }
+}
