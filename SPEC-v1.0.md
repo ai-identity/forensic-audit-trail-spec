@@ -205,6 +205,20 @@ Image, audio, and video inputs are out of scope for v1.0. v1.1 plan in progress 
 
 Agent identity assertions across trust domains depend on IETF AIP draft maturity. v1.0 assumes single-org trust domain; federation profile deferred to v1.2.
 
+### §9.4 Vendor-hosted agent attestation
+
+This specification assumes the operator controls (or proxies) the agent's outbound LLM and API calls — the gateway pattern in §10's reference implementation. A growing share of real deployments do not fit that model: agents that run entirely inside a vendor's hosted runtime (Perplexity hosted agents, OpenAI Custom GPTs, Anthropic Claude Projects, Manus, Devin, Comet, and equivalent) issue their LLM and tool calls from inside the vendor's infrastructure. There is no operator-controlled injection point for the `aid_sk_*` credential, no in-path gateway, and therefore no §4 chain entries or §5 attestations possible by the v1.0 mechanism.
+
+For these runtimes, v1.0 supports only **operator-assertion**: declarative registration of the agent in the operator's inventory, with `binding: declarative-only` and `intercept: none` metadata, plus manual artifact logging. This is honest governance but not cryptographic attestation — chain entries, DSSE attestations, and offline verification per §4–§6 do not apply.
+
+Three intercept paths are under public design exploration:
+
+- **Browser-side intercept.** An operator-controlled browser extension or local proxy that captures outbound HTTPS from the user-facing surface the vendor agent drives. Suitable when the vendor-hosted agent interacts through a user's browser (e.g., Perplexity Comet, ChatGPT, Claude desktop). Provides §4 chain entries for the intercepted leg; cannot attest to anything that happens server-side inside the vendor.
+- **Per-vendor API connectors.** Pull agent telemetry from vendor-exposed audit / usage APIs where they exist (OpenAI Usage API, Anthropic Usage API, and equivalents). Delivers cross-vendor visibility and best-effort attribution, not tamper-evidence on the vendor side.
+- **Vendor-API attestation hooks.** Long-term standards work pushing vendors to expose an "executing agent identity" assertion at their hosted-agent API layer. Requires multi-vendor coordination and is the only path that delivers full §4–§5 semantics for vendor-hosted agents.
+
+**v1.1** will introduce a formal **Level 0 Declarative Conformance** in §8 covering the operator-assertion case, and a browser-side intercept profile. **v1.2** tracks vendor-API attestation hooks alongside cross-org federation (§9.3). This question — how forensic discipline extends to vendor-hosted runtimes without requiring the vendor's compute to change — is the most strategically important unanswered piece of v1.0 and the focus of public design work post-publication.
+
 ## §10. Reference Implementation
 
 [AI Identity](https://www.ai-identity.co/) ships an open-source reference implementation at Level 2 of §8 conformance. Source code lives at https://github.com/Levaj2000/AI-Identity. Components:
