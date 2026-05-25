@@ -81,8 +81,8 @@ This spec profiles existing standards rather than inventing new ones:
 | Version | Theme | Status |
 |---|---|---|
 | **v1.0** | Single-org chain capture + session attestation | **Draft, public review open** |
-| v1.1 | Multimodal context capture; expanded provider matrix | Planning — see [§9.2](./SPEC-v1.0.md#92-multimodal-context-capture) |
-| v1.2 | Cross-organization federation profile (SPIFFE + IETF AIP) | Tracking upstream — see [§9.3](./SPEC-v1.0.md#93-cross-organization-federation) |
+| v1.1 | Multimodal context capture; expanded provider matrix; **Level 0 declarative conformance + browser-side intercept profile** (vendor-hosted agents) | Planning — see [§9.2](./SPEC-v1.0.md#92-multimodal-context-capture), [§9.4](./SPEC-v1.0.md#94-vendor-hosted-agent-attestation) |
+| v1.2 | Cross-organization federation profile (SPIFFE + IETF AIP); vendor-API attestation hooks | Tracking upstream — see [§9.3](./SPEC-v1.0.md#93-cross-organization-federation), [§9.4](./SPEC-v1.0.md#94-vendor-hosted-agent-attestation) |
 
 ## Get involved
 
