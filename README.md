@@ -1,11 +1,13 @@
 # AI Forensics Audit Trail Specification
 
+> [!IMPORTANT]
+> **Status: superseded — this work landed upstream.** This draft explored tamper-evident, cryptographically-signed audit trails for AI agents and directly informed the `attestation` object and `record_integrity` profile now **shipped in [OCSF 1.9.0](https://github.com/ocsf/ocsf-schema/releases/tag/v1.9.0)** ([ocsf-schema#1661](https://github.com/ocsf/ocsf-schema/pull/1661)). The normative home for this work is the OCSF schema; the production reference implementation lives at [Levaj2000/AI-Identity](https://github.com/Levaj2000/AI-Identity). This repository is archived as the historical record.
+
 [![Spec](https://img.shields.io/badge/spec-v1.0--draft-A6DAFF)](./SPEC-v1.0.md) [![License: CC BY 4.0](https://img.shields.io/badge/spec_license-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/) [![License: Apache 2.0](https://img.shields.io/badge/code_license-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 > An open reference standard for tamper-evident, cryptographically-signed audit trails of autonomous AI agents.
 
-**Spec home:** [www.ai-identity.co/spec](https://www.ai-identity.co/spec)
-**Status:** Draft v1.0 — published 2026-05-15. Public review open.
+**Status:** Draft v1.0 (2026-05-15) — superseded by the OCSF 1.9 attestation work; see the notice above.
 
 ---
 
